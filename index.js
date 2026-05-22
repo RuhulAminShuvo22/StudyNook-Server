@@ -1,17 +1,28 @@
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
-const dotenv = require("dotenv");
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
-dotenv.config();
+const cors = require("cors");
+const dotenv = require("dotenv");
 
-const uri = process.env.MONGODB_URI;
+const {
+  MongoClient,
+  ServerApiVersion,
+} = require("mongodb");
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// MongoDB URI
+const uri = process.env.MONGODB_URI;
+
+// Mongo Client
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -22,24 +33,62 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
+
     await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!",
-    );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
+
+    console.log("✅ MongoDB Connected!");
+
+    // Database + Collection
+    const db = client.db("studynook");
+    const roomsCollection = db.collection("rooms");
+
+    // Add Room API
+    app.post("/rooms", async (req, res) => {
+
+      try {
+
+        const roomData = req.body;
+
+        const result =
+          await roomsCollection.insertOne(roomData);
+
+        res.status(201).json({
+          success: true,
+          insertedId: result.insertedId,
+        });
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+          message: "Failed to add room",
+        });
+      }
+    });
+
+    // Ping Check
+    await client.db("admin").command({
+      ping: 1,
+    });
+
+    console.log("🚀 MongoDB Ping Success!");
+
+  } catch (error) {
+
+    console.error(error);
   }
 }
+
 run().catch(console.dir);
 
+// Root Route
 app.get("/", (req, res) => {
-  res.send("Server is running fine!");
+  res.send("🚀 Server Running!");
 });
 
+// Server Start
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🔥 Server running on port ${PORT}`);
 });
