@@ -184,40 +184,40 @@ async function run() {
     // ======================================================
     // 5. DELETE ROOM API (DELETE)
     // ======================================================
-    // app.delete("/rooms/:id", async (req, res) => {
-    //   try {
-    //     const id = req.params.id;
+    app.delete("/rooms/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
 
-    //     // Validate MongoDB ObjectId
-    //     if (!ObjectId.isValid(id)) {
-    //       return res.status(400).json({
-    //         success: false,
-    //         message: "Invalid Room ID format",
-    //       });
-    //     }
+        // Validate MongoDB ObjectId
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid Room ID format",
+          });
+        }
 
-    //     // MongoDB Query
-    //     const query = {
-    //       _id: new ObjectId(id),
-    //     };
+        // MongoDB Query
+        const query = {
+          _id: new ObjectId(id),
+        };
 
         // Delete room
-    //     const result = await roomsCollection.deleteOne(query);
+        const result = await roomsCollection.deleteOne(query);
 
-    //     res.status(200).json({
-    //       success: true,
-    //       message: "Room deleted successfully",
-    //       deletedCount: result.deletedCount,
-    //     });
-    //   } catch (error) {
-    //     console.error("Delete Room Error:", error);
+        res.status(200).json({
+          success: true,
+          message: "Room deleted successfully",
+          deletedCount: result.deletedCount,
+        });
+      } catch (error) {
+        console.error("Delete Room Error:", error);
 
-    //     res.status(500).json({
-    //       success: false,
-    //       message: "Failed to delete room",
-    //     });
-    //   }
-    // });
+        res.status(500).json({
+          success: false,
+          message: "Failed to delete room",
+        });
+      }
+    });
 
     // ======================================================
     // MongoDB Ping Test
