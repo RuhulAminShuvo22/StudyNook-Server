@@ -1,3 +1,5 @@
+
+
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
@@ -39,17 +41,22 @@ async function run() {
     const db = client.db("studynook");
     const roomsCollection = db.collection("rooms");
 
+    // ======================================================
     // 1. Add New Room Specification API (POST)
+    // ======================================================
     app.post("/rooms", async (req, res) => {
       try {
         const roomData = req.body;
+
         const result = await roomsCollection.insertOne(roomData);
+
         res.status(201).json({
           success: true,
           insertedId: result.insertedId,
         });
       } catch (error) {
         console.error(error);
+
         res.status(500).json({
           success: false,
           message: "Failed to add room",
@@ -57,13 +64,17 @@ async function run() {
       }
     });
 
+    // ======================================================
     // 2. Fetch All Available Rooms API (GET)
+    // ======================================================
     app.get("/rooms", async (req, res) => {
       try {
         const result = await roomsCollection.find().toArray();
+
         res.status(200).json(result);
       } catch (error) {
         console.error(error);
+
         res.status(500).json({
           success: false,
           message: "Failed to fetch rooms data",
@@ -71,33 +82,146 @@ async function run() {
       }
     });
 
-    // 3. Fetch Single Dynamic Room Specification by Document ID API (GET)
-    // This route eliminates the 404 and 'Unexpected token <' parsing syntax error in frontend console
+    // ======================================================
+    // 3. Fetch Single Dynamic Room by ID API (GET)
+    // ======================================================
     app.get("/rooms/:id", async (req, res) => {
-        try {
-            const id = req.params.id;
+      try {
+        const id = req.params.id;
 
-            // Security logic to validate if the incoming parameter is a valid 24-character hexadecimal string
-            if (!ObjectId.isValid(id)) {
-                return res.status(400).json({ success: false, message: "Invalid Room ID format" });
-            }
-
-            // Convert string parameters into valid MongoDB ObjectId format
-            const query = { _id: new ObjectId(id) }; 
-            const result = await roomsCollection.findOne(query);
-
-            if (!result) {
-                return res.status(404).json({ success: false, message: "Room not found inside database" });
-            }
-
-            res.status(200).json(result); 
-        } catch (error) {
-            console.error("Error fetching single room dynamic data:", error);
-            res.status(500).json({ success: false, message: "Failed to fetch room details" });
+        // Validate MongoDB ObjectId
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid Room ID format",
+          });
         }
+
+        // Find room by ID
+        const query = { _id: new ObjectId(id) };
+
+        const result = await roomsCollection.findOne(query);
+
+        // Room not found
+        if (!result) {
+          return res.status(404).json({
+            success: false,
+            message: "Room not found inside database",
+          });
+        }
+
+        res.status(200).json(result);
+      } catch (error) {
+        console.error("Error fetching single room dynamic data:", error);
+
+        res.status(500).json({
+          success: false,
+          message: "Failed to fetch room details",
+        });
+      }
     });
 
-    // Send a ping command to verify deployment connection
+    // ======================================================
+    // 4. UPDATE ROOM API (PUT)
+    // ======================================================
+    app.put("/rooms/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+
+        // Validate MongoDB ObjectId
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid Room ID format",
+          });
+        }
+
+        // Updated room data from frontend
+        const updatedRoom = req.body;
+
+        // MongoDB Query
+        const query = {
+          _id: new ObjectId(id),
+        };
+
+        // Updated Fields
+        const updateDoc = {
+          $set: {
+            roomName: updatedRoom.roomName,
+            floor: updatedRoom.floor,
+            imageUrl: updatedRoom.imageUrl,
+            description: updatedRoom.description,
+            amenities: updatedRoom.amenities,
+            capacity: updatedRoom.capacity,
+            hourlyRate: updatedRoom.hourlyRate,
+            bookingCount: updatedRoom.bookingCount || 0,
+            ownerName: updatedRoom.ownerName,
+            ownerEmail: updatedRoom.ownerEmail,
+          },
+        };
+
+        // Update room in database
+        const result = await roomsCollection.updateOne(
+          query,
+          updateDoc
+        );
+
+        res.status(200).json({
+          success: true,
+          message: "Room updated successfully",
+          result,
+        });
+      } catch (error) {
+        console.error("Update Room Error:", error);
+
+        res.status(500).json({
+          success: false,
+          message: "Failed to update room",
+        });
+      }
+    });
+
+    // ======================================================
+    // 5. DELETE ROOM API (DELETE)
+    // ======================================================
+    // app.delete("/rooms/:id", async (req, res) => {
+    //   try {
+    //     const id = req.params.id;
+
+    //     // Validate MongoDB ObjectId
+    //     if (!ObjectId.isValid(id)) {
+    //       return res.status(400).json({
+    //         success: false,
+    //         message: "Invalid Room ID format",
+    //       });
+    //     }
+
+    //     // MongoDB Query
+    //     const query = {
+    //       _id: new ObjectId(id),
+    //     };
+
+        // Delete room
+    //     const result = await roomsCollection.deleteOne(query);
+
+    //     res.status(200).json({
+    //       success: true,
+    //       message: "Room deleted successfully",
+    //       deletedCount: result.deletedCount,
+    //     });
+    //   } catch (error) {
+    //     console.error("Delete Room Error:", error);
+
+    //     res.status(500).json({
+    //       success: false,
+    //       message: "Failed to delete room",
+    //     });
+    //   }
+    // });
+
+    // ======================================================
+    // MongoDB Ping Test
+    // ======================================================
     await client.db("admin").command({
       ping: 1,
     });
@@ -110,12 +234,16 @@ async function run() {
 
 run().catch(console.dir);
 
+// ======================================================
 // Server Root Route Checker
+// ======================================================
 app.get("/", (req, res) => {
   res.send("🚀 Server Running!");
 });
 
-// Start Express Server Engine Listening Port//
+// ======================================================
+// Start Express Server
+// ======================================================
 app.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });
