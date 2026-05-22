@@ -5,10 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 
-const {
-  MongoClient,
-  ServerApiVersion,
-} = require("mongodb");
+const { MongoClient, ServerApiVersion } = require("mongodb");
 
 dotenv.config();
 
@@ -33,7 +30,6 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-
     await client.connect();
 
     console.log("✅ MongoDB Connected!");
@@ -42,28 +38,35 @@ async function run() {
     const db = client.db("studynook");
     const roomsCollection = db.collection("rooms");
 
-    // Add Room API
+    // 1. Add Room API (POST)
     app.post("/rooms", async (req, res) => {
-
       try {
-
         const roomData = req.body;
-
-        const result =
-          await roomsCollection.insertOne(roomData);
-
+        const result = await roomsCollection.insertOne(roomData);
         res.status(201).json({
           success: true,
           insertedId: result.insertedId,
         });
-
       } catch (error) {
-
         console.error(error);
-
         res.status(500).json({
           success: false,
           message: "Failed to add room",
+        });
+      }
+    });
+
+    // 2. Get All Rooms API (GET) <--- EI API TI JOG KORA HOYECHE
+    app.get("/rooms", async (req, res) => {
+      try {
+        // Database er shob data khuje array banaye niye ashbe
+        const result = await roomsCollection.find().toArray();
+        res.status(200).json(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({
+          success: false,
+          message: "Failed to fetch rooms data",
         });
       }
     });
@@ -74,9 +77,7 @@ async function run() {
     });
 
     console.log("🚀 MongoDB Ping Success!");
-
   } catch (error) {
-
     console.error(error);
   }
 }
