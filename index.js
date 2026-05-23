@@ -13,23 +13,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ======================================================
 // Middleware
-// ======================================================
 
 app.use(cors());
 app.use(express.json());
 
-// ======================================================
 // MongoDB Connection URI
-// ======================================================
 
 const uri = process.env.MONGODB_URI;
 
-// ======================================================
 // Initialize Mongo Client
-// ======================================================
-
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -38,9 +31,9 @@ const client = new MongoClient(uri, {
   },
 });
 
-// ======================================================
+
 // Main Function
-// ======================================================
+
 
 async function run() {
   try {
@@ -56,9 +49,8 @@ async function run() {
     const roomsCollection = db.collection("rooms");
     const usersCollection = db.collection("user");
 
-    // ======================================================
     // 1. ADD NEW ROOM API (POST)
-    // ======================================================
+  
 
     app.post("/rooms", async (req, res) => {
       try {
@@ -82,9 +74,8 @@ async function run() {
       }
     });
 
-    // ======================================================
     // 2. FETCH ALL ROOMS API (GET)
-    // ======================================================
+
 
     app.get("/rooms", async (req, res) => {
       try {
@@ -102,10 +93,7 @@ async function run() {
         });
       }
     });
-
-    // ======================================================
     // 3. FETCH SINGLE ROOM BY ID API (GET)
-    // ======================================================
 
     app.get("/rooms/:id", async (req, res) => {
       try {
@@ -146,9 +134,7 @@ async function run() {
       }
     });
 
-    // ======================================================
     // 4. UPDATE ROOM API (PUT)
-    // ======================================================
 
     app.put("/rooms/:id", async (req, res) => {
       try {
@@ -207,9 +193,7 @@ async function run() {
       }
     });
 
-    // ======================================================
     // 5. DELETE ROOM API (DELETE)
-    // ======================================================
 
     app.delete("/rooms/:id", async (req, res) => {
       try {
@@ -246,9 +230,7 @@ async function run() {
       }
     });
 
-    // ======================================================
     // 6. FETCH ALL USERS API (GET)
-    // ======================================================
 
     app.get("/users", async (req, res) => {
       try {
@@ -267,11 +249,9 @@ async function run() {
       }
     });
 
-    // ======================================================
     // 7. FETCH SINGLE USER BY ID API (GET)
-    // ======================================================
-
-    app.get("/users/:id", async (req, res) => {
+  
+     app.get("/users/:id", async (req, res) => {
       try {
         const id = req.params.id;
 
@@ -310,10 +290,8 @@ async function run() {
       }
     });
 
-    // ======================================================
     // MongoDB Ping Test
-    // ======================================================
-
+  
     await client.db("admin").command({
       ping: 1,
     });
@@ -326,18 +304,16 @@ async function run() {
 
 run().catch(console.dir);
 
-// ======================================================
+
 // Root Route
-// ======================================================
+
 
 app.get("/", (req, res) => {
   res.send("🚀 Server Running!");
 });
 
-// ======================================================
-// Start Express Server
-// ======================================================
 
+// Start Express Server
 app.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });
