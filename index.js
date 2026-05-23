@@ -1,5 +1,3 @@
-
-
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
@@ -15,14 +13,23 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Application Middleware
+// ======================================================
+// Middleware
+// ======================================================
+
 app.use(cors());
 app.use(express.json());
 
+// ======================================================
 // MongoDB Connection URI
+// ======================================================
+
 const uri = process.env.MONGODB_URI;
 
+// ======================================================
 // Initialize Mongo Client
+// ======================================================
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -31,22 +38,33 @@ const client = new MongoClient(uri, {
   },
 });
 
+// ======================================================
+// Main Function
+// ======================================================
+
 async function run() {
   try {
-    // Establish connection to MongoDB server
+    // MongoDB Connect
     await client.connect();
+
     console.log("✅ MongoDB Connected!");
 
-    // Initialize Database and Collections
+    // Database
     const db = client.db("studynook");
+
+    // Collections
     const roomsCollection = db.collection("rooms");
+    const usersCollection = db.collection("user");
 
     // ======================================================
-    // 1. Add New Room Specification API (POST)
+    // 1. ADD NEW ROOM API (POST)
     // ======================================================
+
     app.post("/rooms", async (req, res) => {
       try {
         const roomData = req.body;
+
+        console.log("📦 New Room Data:", roomData);
 
         const result = await roomsCollection.insertOne(roomData);
 
@@ -55,7 +73,7 @@ async function run() {
           insertedId: result.insertedId,
         });
       } catch (error) {
-        console.error(error);
+        console.error("❌ Add Room Error:", error);
 
         res.status(500).json({
           success: false,
@@ -65,15 +83,18 @@ async function run() {
     });
 
     // ======================================================
-    // 2. Fetch All Available Rooms API (GET)
+    // 2. FETCH ALL ROOMS API (GET)
     // ======================================================
+
     app.get("/rooms", async (req, res) => {
       try {
         const result = await roomsCollection.find().toArray();
 
+        console.log("✅ Rooms Data Fetched");
+
         res.status(200).json(result);
       } catch (error) {
-        console.error(error);
+        console.error("❌ Fetch Rooms Error:", error);
 
         res.status(500).json({
           success: false,
@@ -83,8 +104,9 @@ async function run() {
     });
 
     // ======================================================
-    // 3. Fetch Single Dynamic Room by ID API (GET)
+    // 3. FETCH SINGLE ROOM BY ID API (GET)
     // ======================================================
+
     app.get("/rooms/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -97,12 +119,15 @@ async function run() {
           });
         }
 
-        // Find room by ID
-        const query = { _id: new ObjectId(id) };
+        // Query
+        const query = {
+          _id: new ObjectId(id),
+        };
 
+        // Find Room
         const result = await roomsCollection.findOne(query);
 
-        // Room not found
+        // Room Not Found
         if (!result) {
           return res.status(404).json({
             success: false,
@@ -112,7 +137,7 @@ async function run() {
 
         res.status(200).json(result);
       } catch (error) {
-        console.error("Error fetching single room dynamic data:", error);
+        console.error("❌ Fetch Single Room Error:", error);
 
         res.status(500).json({
           success: false,
@@ -124,6 +149,7 @@ async function run() {
     // ======================================================
     // 4. UPDATE ROOM API (PUT)
     // ======================================================
+
     app.put("/rooms/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -136,15 +162,15 @@ async function run() {
           });
         }
 
-        // Updated room data from frontend
+        // Updated Data
         const updatedRoom = req.body;
 
-        // MongoDB Query
+        // Query
         const query = {
           _id: new ObjectId(id),
         };
 
-        // Updated Fields
+        // Update Document
         const updateDoc = {
           $set: {
             roomName: updatedRoom.roomName,
@@ -160,7 +186,7 @@ async function run() {
           },
         };
 
-        // Update room in database
+        // Update Room
         const result = await roomsCollection.updateOne(
           query,
           updateDoc
@@ -172,7 +198,7 @@ async function run() {
           result,
         });
       } catch (error) {
-        console.error("Update Room Error:", error);
+        console.error("❌ Update Room Error:", error);
 
         res.status(500).json({
           success: false,
@@ -184,6 +210,7 @@ async function run() {
     // ======================================================
     // 5. DELETE ROOM API (DELETE)
     // ======================================================
+
     app.delete("/rooms/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -196,12 +223,12 @@ async function run() {
           });
         }
 
-        // MongoDB Query
+        // Query
         const query = {
           _id: new ObjectId(id),
         };
 
-        // Delete room
+        // Delete Room
         const result = await roomsCollection.deleteOne(query);
 
         res.status(200).json({
@@ -210,7 +237,7 @@ async function run() {
           deletedCount: result.deletedCount,
         });
       } catch (error) {
-        console.error("Delete Room Error:", error);
+        console.error("❌ Delete Room Error:", error);
 
         res.status(500).json({
           success: false,
@@ -220,23 +247,89 @@ async function run() {
     });
 
     // ======================================================
+    // 6. FETCH ALL USERS API (GET)
+    // ======================================================
+
+    app.get("/users", async (req, res) => {
+      try {
+        const result = await usersCollection.find().toArray();
+
+        console.log("✅ Users Data:", result);
+
+        res.status(200).json(result);
+      } catch (error) {
+        console.error("❌ Fetch Users Error:", error);
+
+        res.status(500).json({
+          success: false,
+          message: "Failed to fetch users data",
+        });
+      }
+    });
+
+    // ======================================================
+    // 7. FETCH SINGLE USER BY ID API (GET)
+    // ======================================================
+
+    app.get("/users/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+
+        // Validate MongoDB ObjectId
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid User ID format",
+          });
+        }
+
+        // Query
+        const query = {
+          _id: new ObjectId(id),
+        };
+
+        // Find User
+        const result = await usersCollection.findOne(query);
+
+        // User Not Found
+        if (!result) {
+          return res.status(404).json({
+            success: false,
+            message: "User not found",
+          });
+        }
+
+        res.status(200).json(result);
+      } catch (error) {
+        console.error("❌ Fetch Single User Error:", error);
+
+        res.status(500).json({
+          success: false,
+          message: "Failed to fetch single user",
+        });
+      }
+    });
+
+    // ======================================================
     // MongoDB Ping Test
     // ======================================================
+
     await client.db("admin").command({
       ping: 1,
     });
 
     console.log("🚀 MongoDB Ping Success!");
   } catch (error) {
-    console.error(error);
+    console.error("❌ MongoDB Connection Error:", error);
   }
 }
 
 run().catch(console.dir);
 
 // ======================================================
-// Server Root Route Checker
+// Root Route
 // ======================================================
+
 app.get("/", (req, res) => {
   res.send("🚀 Server Running!");
 });
@@ -244,6 +337,7 @@ app.get("/", (req, res) => {
 // ======================================================
 // Start Express Server
 // ======================================================
+
 app.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });
