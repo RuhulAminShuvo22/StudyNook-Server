@@ -31,9 +31,7 @@ const client = new MongoClient(uri, {
   },
 });
 
-
 // Main Function
-
 
 async function run() {
   try {
@@ -50,7 +48,6 @@ async function run() {
     const usersCollection = db.collection("user");
 
     // 1. ADD NEW ROOM API (POST)
-  
 
     app.post("/rooms", async (req, res) => {
       try {
@@ -75,7 +72,6 @@ async function run() {
     });
 
     // 2. FETCH ALL ROOMS API (GET)
-
 
     app.get("/rooms", async (req, res) => {
       try {
@@ -173,10 +169,7 @@ async function run() {
         };
 
         // Update Room
-        const result = await roomsCollection.updateOne(
-          query,
-          updateDoc
-        );
+        const result = await roomsCollection.updateOne(query, updateDoc);
 
         res.status(200).json({
           success: true,
@@ -250,8 +243,8 @@ async function run() {
     });
 
     // 7. FETCH SINGLE USER BY ID API (GET)
-  
-     app.get("/users/:id", async (req, res) => {
+
+    app.get("/users/:id", async (req, res) => {
       try {
         const id = req.params.id;
 
@@ -291,7 +284,7 @@ async function run() {
     });
 
     // MongoDB Ping Test
-  
+
     await client.db("admin").command({
       ping: 1,
     });
@@ -304,16 +297,13 @@ async function run() {
 
 run().catch(console.dir);
 
-
 // Root Route
-
 
 app.get("/", (req, res) => {
   res.send("🚀 Server Running!");
 });
 
-
-// Start Express Server
+// Start Express Server//
 app.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });
