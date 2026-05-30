@@ -525,7 +525,6 @@
 //   console.log(`🔥 Server running on port ${PORT}`);
 // });
 
-
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
@@ -671,7 +670,7 @@ async function run() {
             $set: {
               ...updatedRoom,
             },
-          }
+          },
         );
 
         res.json({
@@ -729,7 +728,7 @@ async function run() {
     app.put("/users/:id", async (req, res) => {
       const result = await usersCollection.updateOne(
         { _id: new ObjectId(req.params.id) },
-        { $set: req.body }
+        { $set: req.body },
       );
 
       res.json(result);
@@ -767,7 +766,7 @@ async function run() {
 
         await roomsCollection.updateOne(
           { _id: new ObjectId(roomId) },
-          { $inc: { bookingCount: 1 } }
+          { $inc: { bookingCount: 1 } },
         );
 
         res.status(201).json({
@@ -804,15 +803,35 @@ async function run() {
 
       await bookingsCollection.updateOne(
         { _id: new ObjectId(req.params.id) },
-        { $set: { status: "cancelled" } }
+        { $set: { status: "cancelled" } },
       );
 
       await roomsCollection.updateOne(
         { _id: new ObjectId(booking.roomId) },
-        { $inc: { bookingCount: -1 } }
+        { $inc: { bookingCount: -1 } },
       );
 
       res.json({ success: true });
+    });
+
+    // GET ROOMS BY USER EMAIL
+    app.get("/rooms/user/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+
+        const result = await roomsCollection
+          .find({ ownerEmail: email })
+          .toArray();
+
+        res.status(200).json(result);
+      } catch (error) {
+        console.error("Fetch user rooms error:", error);
+
+        res.status(500).json({
+          success: false,
+          message: "Failed to fetch user rooms",
+        });
+      }
     });
 
     // =====================================================
