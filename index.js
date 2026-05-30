@@ -90,10 +90,25 @@ async function run() {
       }
     });
 
+    //===========================================
+    //middleware
+    //===========================================
+
+
     // =====================================================
     // GET SINGLE ROOM
     // =====================================================
-    app.get("/rooms/:id", async (req, res) => {
+    app.get("/rooms/:id", (req, res, next)=>{
+      const header = req.headers.authorization
+      // console.log(header)
+      if(header === "logged in"){
+        next()
+      }
+      else{
+        res.status(401).json({message: "You are not Logged in"})
+      }
+      
+    } ,  async (req, res) => {
       try {
         const id = req.params.id;
 
