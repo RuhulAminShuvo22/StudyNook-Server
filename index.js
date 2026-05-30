@@ -41,9 +41,12 @@ async function run() {
     // Database
     const db = client.db("studynook");
 
+
+
     // Collections
     const roomsCollection = db.collection("rooms");
     const usersCollection = db.collection("user");
+    const bookingsCollection = db.collection("bookings");
 
     // =====================================================
     // 1. ADD NEW ROOM API (POST)
