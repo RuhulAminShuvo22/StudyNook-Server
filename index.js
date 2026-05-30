@@ -1,4 +1,3 @@
-
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
@@ -40,8 +39,6 @@ async function run() {
 
     // Database
     const db = client.db("studynook");
-
-
 
     // Collections
     const roomsCollection = db.collection("rooms");
@@ -179,10 +176,7 @@ async function run() {
         };
 
         // Update Room
-        const result = await roomsCollection.updateOne(
-          query,
-          updateDoc
-        );
+        const result = await roomsCollection.updateOne(query, updateDoc);
 
         res.status(200).json({
           success: true,
@@ -333,10 +327,7 @@ async function run() {
         };
 
         // Update User
-        const result = await usersCollection.updateOne(
-          query,
-          updateDoc
-        );
+        const result = await usersCollection.updateOne(query, updateDoc);
 
         res.status(200).json({
           success: true,
@@ -349,6 +340,148 @@ async function run() {
         res.status(500).json({
           success: false,
           message: "Failed to update user profile",
+        });
+      }
+    });
+
+    // =====================================================
+    // CREATE BOOKING
+    // =====================================================
+
+    app.post("/bookings", async (req, res) => {
+      try {
+        const booking = req.body;
+
+        const { roomId, bookingDate, startTime, endTime } = booking;
+
+        const conflict = await bookingsCollection.findOne({
+          roomId,
+          bookingDate,
+          status: "confirmed",
+          startTime: {
+            $lt: endTime,
+          },
+          endTime: {
+            $gt: startTime,
+          },
+        });
+
+        if (conflict) {
+          return res.status(400).json({
+            success: false,
+            message: "Selected time slot already booked",
+          });
+        }
+
+        const result = await bookingsCollection.insertOne({
+          ...booking,
+          status: "confirmed",
+          createdAt: new Date(),
+        });
+
+        await roomsCollection.updateOne(
+          {
+            _id: new ObjectId(roomId),
+          },
+          {
+            $inc: {
+              bookingCount: 1,
+            },
+          },
+        );
+
+        res.status(201).json({
+          success: true,
+          insertedId: result.insertedId,
+          message: "Room booked successfully",
+        });
+      } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+          message: "Booking failed",
+        });
+      }
+    });
+
+    // =====================================================
+    // GET MY BOOKINGS
+    // =====================================================
+
+    app.get("/bookings/user/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+
+        const result = await bookingsCollection
+          .find({
+            userEmail: email,
+          })
+          .sort({
+            createdAt: -1,
+          })
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
+        });
+      }
+    });
+
+    // =====================================================
+    // CANCEL BOOKING
+    // =====================================================
+
+    app.patch("/bookings/:id/cancel", async (req, res) => {
+      try {
+        const id = req.params.id;
+
+        const booking = await bookingsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
+        if (!booking) {
+          return res.status(404).json({
+            success: false,
+            message: "Booking not found",
+          });
+        }
+
+        await bookingsCollection.updateOne(
+          {
+            _id: new ObjectId(id),
+          },
+          {
+            $set: {
+              status: "cancelled",
+            },
+          },
+        );
+
+        await roomsCollection.updateOne(
+          {
+            _id: new ObjectId(booking.roomId),
+          },
+          {
+            $inc: {
+              bookingCount: -1,
+            },
+          },
+        );
+
+        res.send({
+          success: true,
+          message: "Booking cancelled",
+        });
+      } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+          success: false,
         });
       }
     });
