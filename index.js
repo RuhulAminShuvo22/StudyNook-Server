@@ -1,3 +1,531 @@
+// const dns = require("node:dns");
+// dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
+// const express = require("express");
+// const cors = require("cors");
+// const dotenv = require("dotenv");
+
+// // Import MongoClient, ServerApiVersion, and ObjectId from mongodb package
+// const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+
+// dotenv.config();
+
+// const app = express();
+// const PORT = process.env.PORT || 5000;
+
+// // Middleware
+// app.use(cors());
+// app.use(express.json());
+
+// // MongoDB Connection URI
+// const uri = process.env.MONGODB_URI;
+
+// // Initialize Mongo Client
+// const client = new MongoClient(uri, {
+//   serverApi: {
+//     version: ServerApiVersion.v1,
+//     strict: true,
+//     deprecationErrors: true,
+//   },
+// });
+
+// // Main Function
+// async function run() {
+//   try {
+//     // MongoDB Connect
+//     await client.connect();
+
+//     console.log("✅ MongoDB Connected!");
+
+//     // Database
+//     const db = client.db("studynook");
+
+//     // Collections
+//     const roomsCollection = db.collection("rooms");
+//     const usersCollection = db.collection("user");
+//     const bookingsCollection = db.collection("bookings");
+
+//     // =====================================================
+//     // 1. ADD NEW ROOM API (POST)
+//     // =====================================================
+
+//     app.post("/rooms", async (req, res) => {
+//       try {
+//         const roomData = req.body;
+
+//         if (!roomData.ownerEmail) {
+//           return res.status(401).json({
+//             success: false,
+//             message: "Unauthorized: ownerEmail missing",
+//           });
+//         }
+
+//         console.log("📦 New Room Data:", roomData);
+
+//         const result = await roomsCollection.insertOne(roomData);
+
+//         res.status(201).json({
+//           success: true,
+//           insertedId: result.insertedId,
+//         });
+//       } catch (error) {
+//         console.error("❌ Add Room Error:", error);
+
+//         res.status(500).json({
+//           success: false,
+//           message: "Failed to add room",
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // 2. FETCH ALL ROOMS API (GET)
+//     // =====================================================
+
+//     app.get("/rooms", async (req, res) => {
+//       try {
+//         const result = await roomsCollection.find().toArray();
+
+//         console.log("✅ Rooms Data Fetched");
+
+//         res.status(200).json(result);
+//       } catch (error) {
+//         console.error("❌ Fetch Rooms Error:", error);
+
+//         res.status(500).json({
+//           success: false,
+//           message: "Failed to fetch rooms data",
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // 3. FETCH SINGLE ROOM BY ID API (GET)
+//     // =====================================================
+
+//     app.get("/rooms/:id", async (req, res) => {
+//       try {
+//         const id = req.params.id;
+
+//         // Validate MongoDB ObjectId
+//         if (!ObjectId.isValid(id)) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Invalid Room ID format",
+//           });
+//         }
+
+//         // Query
+//         const query = {
+//           _id: new ObjectId(id),
+//         };
+
+//         // Find Room
+//         const result = await roomsCollection.findOne(query);
+
+//         // Room Not Found
+//         if (!result) {
+//           return res.status(404).json({
+//             success: false,
+//             message: "Room not found inside database",
+//           });
+//         }
+
+//         res.status(200).json(result);
+//       } catch (error) {
+//         console.error("❌ Fetch Single Room Error:", error);
+
+//         res.status(500).json({
+//           success: false,
+//           message: "Failed to fetch room details",
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // 4. UPDATE ROOM API (PUT)
+//     // =====================================================
+
+//     app.put("/rooms/:id", async (req, res) => {
+//       try {
+//         const id = req.params.id;
+
+//         // Validate MongoDB ObjectId
+//         if (!ObjectId.isValid(id)) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Invalid Room ID format",
+//           });
+//         }
+
+//         // Updated Data
+//         const updatedRoom = req.body;
+
+//         // Query
+//         const query = {
+//           _id: new ObjectId(id),
+//         };
+
+//         // Update Document
+//         const updateDoc = {
+//           $set: {
+//             roomName: updatedRoom.roomName,
+//             floor: updatedRoom.floor,
+//             imageUrl: updatedRoom.imageUrl,
+//             description: updatedRoom.description,
+//             amenities: updatedRoom.amenities,
+//             capacity: updatedRoom.capacity,
+//             hourlyRate: updatedRoom.hourlyRate,
+//             bookingCount: updatedRoom.bookingCount || 0,
+//             ownerName: updatedRoom.ownerName,
+//             ownerEmail: updatedRoom.ownerEmail,
+//           },
+//         };
+
+//         // Update Room
+//         const result = await roomsCollection.updateOne(query, updateDoc);
+
+//         res.status(200).json({
+//           success: true,
+//           message: "Room updated successfully",
+//           result,
+//         });
+//       } catch (error) {
+//         console.error("❌ Update Room Error:", error);
+
+//         res.status(500).json({
+//           success: false,
+//           message: "Failed to update room",
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // 5. DELETE ROOM API (DELETE)
+//     // =====================================================
+
+//     app.delete("/rooms/:id", async (req, res) => {
+//       try {
+//         const id = req.params.id;
+
+//         // Validate MongoDB ObjectId
+//         if (!ObjectId.isValid(id)) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Invalid Room ID format",
+//           });
+//         }
+
+//         // Query
+//         const query = {
+//           _id: new ObjectId(id),
+//         };
+
+//         // Delete Room
+//         const result = await roomsCollection.deleteOne(query);
+
+//         res.status(200).json({
+//           success: true,
+//           message: "Room deleted successfully",
+//           deletedCount: result.deletedCount,
+//         });
+//       } catch (error) {
+//         console.error("❌ Delete Room Error:", error);
+
+//         res.status(500).json({
+//           success: false,
+//           message: "Failed to delete room",
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // 6. FETCH ALL USERS API (GET)
+//     // =====================================================
+
+//     app.get("/users", async (req, res) => {
+//       try {
+//         const result = await usersCollection.find().toArray();
+
+//         console.log("✅ Users Data:", result);
+
+//         res.status(200).json(result);
+//       } catch (error) {
+//         console.error("❌ Fetch Users Error:", error);
+
+//         res.status(500).json({
+//           success: false,
+//           message: "Failed to fetch users data",
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // 7. FETCH SINGLE USER BY ID API (GET)
+//     // =====================================================
+
+//     app.get("/users/:id", async (req, res) => {
+//       try {
+//         const id = req.params.id;
+
+//         // Validate MongoDB ObjectId
+//         if (!ObjectId.isValid(id)) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Invalid User ID format",
+//           });
+//         }
+
+//         // Query
+//         const query = {
+//           _id: new ObjectId(id),
+//         };
+
+//         // Find User
+//         const result = await usersCollection.findOne(query);
+
+//         // User Not Found
+//         if (!result) {
+//           return res.status(404).json({
+//             success: false,
+//             message: "User not found",
+//           });
+//         }
+
+//         res.status(200).json(result);
+//       } catch (error) {
+//         console.error("❌ Fetch Single User Error:", error);
+
+//         res.status(500).json({
+//           success: false,
+//           message: "Failed to fetch single user",
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // 8. UPDATE USER PROFILE API (PUT)
+//     // =====================================================
+
+//     app.put("/users/:id", async (req, res) => {
+//       try {
+//         const id = req.params.id;
+//         const updatedData = req.body;
+
+//         // Validate MongoDB ObjectId
+//         if (!ObjectId.isValid(id)) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Invalid User ID format",
+//           });
+//         }
+
+//         // Query
+//         const query = {
+//           _id: new ObjectId(id),
+//         };
+
+//         // Update Document
+//         const updateDoc = {
+//           $set: {
+//             name: updatedData.name,
+//             image: updatedData.image,
+//           },
+//         };
+
+//         // Update User
+//         const result = await usersCollection.updateOne(query, updateDoc);
+
+//         res.status(200).json({
+//           success: true,
+//           message: "User profile updated successfully",
+//           result,
+//         });
+//       } catch (error) {
+//         console.error("❌ Update User Error:", error);
+
+//         res.status(500).json({
+//           success: false,
+//           message: "Failed to update user profile",
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // CREATE BOOKING
+//     // =====================================================
+
+//     app.post("/bookings", async (req, res) => {
+//       try {
+//         const booking = req.body;
+
+//         const { roomId, bookingDate, startTime, endTime } = booking;
+
+//         const conflict = await bookingsCollection.findOne({
+//           roomId,
+//           bookingDate,
+//           status: "confirmed",
+//           startTime: {
+//             $lt: endTime,
+//           },
+//           endTime: {
+//             $gt: startTime,
+//           },
+//         });
+
+//         if (conflict) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Selected time slot already booked",
+//           });
+//         }
+
+//         const result = await bookingsCollection.insertOne({
+//           ...booking,
+//           status: "confirmed",
+//           createdAt: new Date(),
+//         });
+
+//         await roomsCollection.updateOne(
+//           {
+//             _id: new ObjectId(roomId),
+//           },
+//           {
+//             $inc: {
+//               bookingCount: 1,
+//             },
+//           },
+//         );
+
+//         res.status(201).json({
+//           success: true,
+//           insertedId: result.insertedId,
+//           message: "Room booked successfully",
+//         });
+//       } catch (error) {
+//         console.error(error);
+
+//         res.status(500).json({
+//           success: false,
+//           message: "Booking failed",
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // GET MY BOOKINGS
+//     // =====================================================
+
+//     app.get("/bookings/user/:email", async (req, res) => {
+//       try {
+//         const email = req.params.email;
+
+//         const result = await bookingsCollection
+//           .find({
+//             userEmail: email,
+//           })
+//           .sort({
+//             createdAt: -1,
+//           })
+//           .toArray();
+
+//         res.send(result);
+//       } catch (error) {
+//         console.error(error);
+
+//         res.status(500).json({
+//           success: false,
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // CANCEL BOOKING
+//     // =====================================================
+
+//     app.patch("/bookings/:id/cancel", async (req, res) => {
+//       try {
+//         const id = req.params.id;
+
+//         const booking = await bookingsCollection.findOne({
+//           _id: new ObjectId(id),
+//         });
+
+//         if (!booking) {
+//           return res.status(404).json({
+//             success: false,
+//             message: "Booking not found",
+//           });
+//         }
+
+//         await bookingsCollection.updateOne(
+//           {
+//             _id: new ObjectId(id),
+//           },
+//           {
+//             $set: {
+//               status: "cancelled",
+//             },
+//           },
+//         );
+
+//         await roomsCollection.updateOne(
+//           {
+//             _id: new ObjectId(booking.roomId),
+//           },
+//           {
+//             $inc: {
+//               bookingCount: -1,
+//             },
+//           },
+//         );
+
+//         res.send({
+//           success: true,
+//           message: "Booking cancelled",
+//         });
+//       } catch (error) {
+//         console.error(error);
+
+//         res.status(500).json({
+//           success: false,
+//         });
+//       }
+//     });
+
+//     // =====================================================
+//     // MongoDB Ping Test
+//     // =====================================================
+
+//     await client.db("admin").command({
+//       ping: 1,
+//     });
+
+//     console.log("🚀 MongoDB Ping Success!");
+//   } catch (error) {
+//     console.error("❌ MongoDB Connection Error:", error);
+//   }
+// }
+
+// run().catch(console.dir);
+
+// // =====================================================
+// // Root Route
+// // =====================================================
+
+// app.get("/", (req, res) => {
+//   res.send("🚀 Server Running!");
+// });
+
+// // =====================================================
+// // Start Express Server
+// // =====================================================
+
+// app.listen(PORT, () => {
+//   console.log(`🔥 Server running on port ${PORT}`);
+// });
+
+
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
@@ -5,7 +533,6 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 
-// Import MongoClient, ServerApiVersion, and ObjectId from mongodb package
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 dotenv.config();
@@ -13,14 +540,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// ===================== MIDDLEWARE =====================
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection URI
+// ===================== DB CONNECTION =====================
 const uri = process.env.MONGODB_URI;
 
-// Initialize Mongo Client
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -29,41 +555,45 @@ const client = new MongoClient(uri, {
   },
 });
 
-// Main Function
+// ===================== MAIN FUNCTION =====================
 async function run() {
   try {
-    // MongoDB Connect
     await client.connect();
-
     console.log("✅ MongoDB Connected!");
 
-    // Database
     const db = client.db("studynook");
 
-    // Collections
     const roomsCollection = db.collection("rooms");
     const usersCollection = db.collection("user");
     const bookingsCollection = db.collection("bookings");
 
     // =====================================================
-    // 1. ADD NEW ROOM API (POST)
+    // CREATE ROOM
     // =====================================================
-
     app.post("/rooms", async (req, res) => {
       try {
         const roomData = req.body;
 
-        console.log("📦 New Room Data:", roomData);
+        // 🔐 VALIDATION
+        if (!roomData.ownerEmail || !roomData.roomName) {
+          return res.status(400).json({
+            success: false,
+            message: "Missing required fields",
+          });
+        }
 
-        const result = await roomsCollection.insertOne(roomData);
+        const result = await roomsCollection.insertOne({
+          ...roomData,
+          bookingCount: 0,
+          createdAt: new Date(),
+        });
 
         res.status(201).json({
           success: true,
           insertedId: result.insertedId,
         });
       } catch (error) {
-        console.error("❌ Add Room Error:", error);
-
+        console.error("Add Room Error:", error);
         res.status(500).json({
           success: false,
           message: "Failed to add room",
@@ -72,282 +602,142 @@ async function run() {
     });
 
     // =====================================================
-    // 2. FETCH ALL ROOMS API (GET)
+    // GET ALL ROOMS
     // =====================================================
-
     app.get("/rooms", async (req, res) => {
       try {
         const result = await roomsCollection.find().toArray();
-
-        console.log("✅ Rooms Data Fetched");
-
         res.status(200).json(result);
       } catch (error) {
-        console.error("❌ Fetch Rooms Error:", error);
-
         res.status(500).json({
           success: false,
-          message: "Failed to fetch rooms data",
+          message: "Failed to fetch rooms",
         });
       }
     });
 
     // =====================================================
-    // 3. FETCH SINGLE ROOM BY ID API (GET)
+    // GET SINGLE ROOM
     // =====================================================
-
     app.get("/rooms/:id", async (req, res) => {
       try {
         const id = req.params.id;
 
-        // Validate MongoDB ObjectId
         if (!ObjectId.isValid(id)) {
           return res.status(400).json({
             success: false,
-            message: "Invalid Room ID format",
+            message: "Invalid ID",
           });
         }
 
-        // Query
-        const query = {
+        const result = await roomsCollection.findOne({
           _id: new ObjectId(id),
-        };
+        });
 
-        // Find Room
-        const result = await roomsCollection.findOne(query);
-
-        // Room Not Found
         if (!result) {
           return res.status(404).json({
             success: false,
-            message: "Room not found inside database",
+            message: "Room not found",
           });
         }
 
-        res.status(200).json(result);
+        res.json(result);
       } catch (error) {
-        console.error("❌ Fetch Single Room Error:", error);
-
         res.status(500).json({
           success: false,
-          message: "Failed to fetch room details",
+          message: "Error fetching room",
         });
       }
     });
 
     // =====================================================
-    // 4. UPDATE ROOM API (PUT)
+    // UPDATE ROOM
     // =====================================================
-
     app.put("/rooms/:id", async (req, res) => {
       try {
         const id = req.params.id;
+        const updatedRoom = req.body;
 
-        // Validate MongoDB ObjectId
         if (!ObjectId.isValid(id)) {
           return res.status(400).json({
             success: false,
-            message: "Invalid Room ID format",
+            message: "Invalid ID",
           });
         }
 
-        // Updated Data
-        const updatedRoom = req.body;
+        const result = await roomsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            $set: {
+              ...updatedRoom,
+            },
+          }
+        );
 
-        // Query
-        const query = {
-          _id: new ObjectId(id),
-        };
-
-        // Update Document
-        const updateDoc = {
-          $set: {
-            roomName: updatedRoom.roomName,
-            floor: updatedRoom.floor,
-            imageUrl: updatedRoom.imageUrl,
-            description: updatedRoom.description,
-            amenities: updatedRoom.amenities,
-            capacity: updatedRoom.capacity,
-            hourlyRate: updatedRoom.hourlyRate,
-            bookingCount: updatedRoom.bookingCount || 0,
-            ownerName: updatedRoom.ownerName,
-            ownerEmail: updatedRoom.ownerEmail,
-          },
-        };
-
-        // Update Room
-        const result = await roomsCollection.updateOne(query, updateDoc);
-
-        res.status(200).json({
+        res.json({
           success: true,
-          message: "Room updated successfully",
+          message: "Room updated",
           result,
         });
       } catch (error) {
-        console.error("❌ Update Room Error:", error);
-
         res.status(500).json({
           success: false,
-          message: "Failed to update room",
+          message: "Update failed",
         });
       }
     });
 
     // =====================================================
-    // 5. DELETE ROOM API (DELETE)
+    // DELETE ROOM
     // =====================================================
-
     app.delete("/rooms/:id", async (req, res) => {
       try {
         const id = req.params.id;
 
-        // Validate MongoDB ObjectId
-        if (!ObjectId.isValid(id)) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid Room ID format",
-          });
-        }
-
-        // Query
-        const query = {
+        const result = await roomsCollection.deleteOne({
           _id: new ObjectId(id),
-        };
+        });
 
-        // Delete Room
-        const result = await roomsCollection.deleteOne(query);
-
-        res.status(200).json({
+        res.json({
           success: true,
-          message: "Room deleted successfully",
+          message: "Room deleted",
           deletedCount: result.deletedCount,
         });
       } catch (error) {
-        console.error("❌ Delete Room Error:", error);
-
         res.status(500).json({
           success: false,
-          message: "Failed to delete room",
+          message: "Delete failed",
         });
       }
     });
 
     // =====================================================
-    // 6. FETCH ALL USERS API (GET)
+    // USERS
     // =====================================================
-
     app.get("/users", async (req, res) => {
-      try {
-        const result = await usersCollection.find().toArray();
-
-        console.log("✅ Users Data:", result);
-
-        res.status(200).json(result);
-      } catch (error) {
-        console.error("❌ Fetch Users Error:", error);
-
-        res.status(500).json({
-          success: false,
-          message: "Failed to fetch users data",
-        });
-      }
+      const result = await usersCollection.find().toArray();
+      res.json(result);
     });
-
-    // =====================================================
-    // 7. FETCH SINGLE USER BY ID API (GET)
-    // =====================================================
 
     app.get("/users/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-
-        // Validate MongoDB ObjectId
-        if (!ObjectId.isValid(id)) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid User ID format",
-          });
-        }
-
-        // Query
-        const query = {
-          _id: new ObjectId(id),
-        };
-
-        // Find User
-        const result = await usersCollection.findOne(query);
-
-        // User Not Found
-        if (!result) {
-          return res.status(404).json({
-            success: false,
-            message: "User not found",
-          });
-        }
-
-        res.status(200).json(result);
-      } catch (error) {
-        console.error("❌ Fetch Single User Error:", error);
-
-        res.status(500).json({
-          success: false,
-          message: "Failed to fetch single user",
-        });
-      }
+      const result = await usersCollection.findOne({
+        _id: new ObjectId(req.params.id),
+      });
+      res.json(result);
     });
-
-    // =====================================================
-    // 8. UPDATE USER PROFILE API (PUT)
-    // =====================================================
 
     app.put("/users/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const updatedData = req.body;
+      const result = await usersCollection.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $set: req.body }
+      );
 
-        // Validate MongoDB ObjectId
-        if (!ObjectId.isValid(id)) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid User ID format",
-          });
-        }
-
-        // Query
-        const query = {
-          _id: new ObjectId(id),
-        };
-
-        // Update Document
-        const updateDoc = {
-          $set: {
-            name: updatedData.name,
-            image: updatedData.image,
-          },
-        };
-
-        // Update User
-        const result = await usersCollection.updateOne(query, updateDoc);
-
-        res.status(200).json({
-          success: true,
-          message: "User profile updated successfully",
-          result,
-        });
-      } catch (error) {
-        console.error("❌ Update User Error:", error);
-
-        res.status(500).json({
-          success: false,
-          message: "Failed to update user profile",
-        });
-      }
+      res.json(result);
     });
 
     // =====================================================
-    // CREATE BOOKING
+    // BOOKINGS
     // =====================================================
-
     app.post("/bookings", async (req, res) => {
       try {
         const booking = req.body;
@@ -358,18 +748,14 @@ async function run() {
           roomId,
           bookingDate,
           status: "confirmed",
-          startTime: {
-            $lt: endTime,
-          },
-          endTime: {
-            $gt: startTime,
-          },
+          startTime: { $lt: endTime },
+          endTime: { $gt: startTime },
         });
 
         if (conflict) {
           return res.status(400).json({
             success: false,
-            message: "Selected time slot already booked",
+            message: "Time slot already booked",
           });
         }
 
@@ -380,24 +766,15 @@ async function run() {
         });
 
         await roomsCollection.updateOne(
-          {
-            _id: new ObjectId(roomId),
-          },
-          {
-            $inc: {
-              bookingCount: 1,
-            },
-          },
+          { _id: new ObjectId(roomId) },
+          { $inc: { bookingCount: 1 } }
         );
 
         res.status(201).json({
           success: true,
           insertedId: result.insertedId,
-          message: "Room booked successfully",
         });
       } catch (error) {
-        console.error(error);
-
         res.status(500).json({
           success: false,
           message: "Booking failed",
@@ -405,115 +782,57 @@ async function run() {
       }
     });
 
-    // =====================================================
-    // GET MY BOOKINGS
-    // =====================================================
-
+    // MY BOOKINGS
     app.get("/bookings/user/:email", async (req, res) => {
-      try {
-        const email = req.params.email;
+      const result = await bookingsCollection
+        .find({ userEmail: req.params.email })
+        .sort({ createdAt: -1 })
+        .toArray();
 
-        const result = await bookingsCollection
-          .find({
-            userEmail: email,
-          })
-          .sort({
-            createdAt: -1,
-          })
-          .toArray();
-
-        res.send(result);
-      } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-          success: false,
-        });
-      }
+      res.json(result);
     });
 
-    // =====================================================
     // CANCEL BOOKING
-    // =====================================================
-
     app.patch("/bookings/:id/cancel", async (req, res) => {
-      try {
-        const id = req.params.id;
+      const booking = await bookingsCollection.findOne({
+        _id: new ObjectId(req.params.id),
+      });
 
-        const booking = await bookingsCollection.findOne({
-          _id: new ObjectId(id),
-        });
-
-        if (!booking) {
-          return res.status(404).json({
-            success: false,
-            message: "Booking not found",
-          });
-        }
-
-        await bookingsCollection.updateOne(
-          {
-            _id: new ObjectId(id),
-          },
-          {
-            $set: {
-              status: "cancelled",
-            },
-          },
-        );
-
-        await roomsCollection.updateOne(
-          {
-            _id: new ObjectId(booking.roomId),
-          },
-          {
-            $inc: {
-              bookingCount: -1,
-            },
-          },
-        );
-
-        res.send({
-          success: true,
-          message: "Booking cancelled",
-        });
-      } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-          success: false,
-        });
+      if (!booking) {
+        return res.status(404).json({ message: "Not found" });
       }
+
+      await bookingsCollection.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $set: { status: "cancelled" } }
+      );
+
+      await roomsCollection.updateOne(
+        { _id: new ObjectId(booking.roomId) },
+        { $inc: { bookingCount: -1 } }
+      );
+
+      res.json({ success: true });
     });
 
     // =====================================================
-    // MongoDB Ping Test
+    // HEALTH CHECK
     // =====================================================
-
-    await client.db("admin").command({
-      ping: 1,
-    });
-
+    await client.db("admin").command({ ping: 1 });
     console.log("🚀 MongoDB Ping Success!");
   } catch (error) {
-    console.error("❌ MongoDB Connection Error:", error);
+    console.error("DB Error:", error);
   }
 }
 
 run().catch(console.dir);
 
-// =====================================================
-// Root Route
-// =====================================================
-
+// ===================== ROOT =====================
 app.get("/", (req, res) => {
   res.send("🚀 Server Running!");
 });
 
-// =====================================================
-// Start Express Server
-// =====================================================
-
+// ===================== START =====================
 app.listen(PORT, () => {
-  console.log(`🔥 Server running on port ${PORT}`);
+  console.log(`🔥 Server running on ${PORT}`);
 });
