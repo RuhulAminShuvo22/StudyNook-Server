@@ -99,48 +99,38 @@ async function run() {
     // =====================================================
     // GET SINGLE ROOM
     // =====================================================
-    app.get(
-      "/rooms/:id",
-      (req, res, next) => {
-        const header = req.headers.authorization;
-        // console.log(header)
-        if (header === "logged in") {
-          next();
-        } else {
-          res.status(401).json({ message: "You are not Logged in" });
-        }
-      },
-      async (req, res) => {
-        try {
-          const id = req.params.id;
+    app.get("/rooms/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
 
-          if (!ObjectId.isValid(id)) {
-            return res.status(400).json({
-              success: false,
-              message: "Invalid ID",
-            });
-          }
-
-          const result = await roomsCollection.findOne({
-            _id: new ObjectId(id),
-          });
-
-          if (!result) {
-            return res.status(404).json({
-              success: false,
-              message: "Room not found",
-            });
-          }
-
-          res.json(result);
-        } catch (error) {
-          res.status(500).json({
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).json({
             success: false,
-            message: "Error fetching room",
+            message: "Invalid ID",
           });
         }
-      },
-    );
+
+        const result = await roomsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
+        if (!result) {
+          return res.status(404).json({
+            success: false,
+            message: "Room not found",
+          });
+        }
+
+        res.status(200).json(result);
+      } catch (error) {
+        console.error("Get room error:", error);
+
+        res.status(500).json({
+          success: false,
+          message: "Error fetching room",
+        });
+      }
+    });
 
     // =====================================================
     // UPDATE ROOM
@@ -160,25 +150,24 @@ async function run() {
         const result = await roomsCollection.updateOne(
           { _id: new ObjectId(id) },
           {
-            $set: {
-              ...updatedRoom,
-            },
+            $set: updatedRoom,
           },
         );
 
-        res.json({
+        res.status(200).json({
           success: true,
-          message: "Room updated",
-          result,
+          message: "Room updated successfully",
+          modifiedCount: result.modifiedCount,
         });
       } catch (error) {
+        console.error("Update room error:", error);
+
         res.status(500).json({
           success: false,
           message: "Update failed",
         });
       }
     });
-
     // =====================================================
     // DELETE ROOM
     // =====================================================
@@ -219,12 +208,25 @@ async function run() {
     });
 
     app.put("/users/:id", async (req, res) => {
-      const result = await usersCollection.updateOne(
-        { _id: new ObjectId(req.params.id) },
-        { $set: req.body },
-      );
+      try {
+        const result = await usersCollection.updateOne(
+          { _id: new ObjectId(req.params.id) },
+          { $set: req.body },
+        );
 
-      res.json(result);
+        res.json({
+          success: true,
+          message: "Profile updated successfully",
+          result,
+        });
+      } catch (error) {
+        console.error("Profile update error:", error);
+
+        res.status(500).json({
+          success: false,
+          message: "Update failed",
+        });
+      }
     });
 
     // =====================================================
