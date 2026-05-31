@@ -30,7 +30,7 @@ const client = new MongoClient(uri, {
 // ===================== MAIN FUNCTION =====================
 async function run() {
   try {
-    await client.connect();
+    //await client.connect();
     console.log("✅ MongoDB Connected!");
 
     const db = client.db("studynook");
@@ -332,7 +332,7 @@ async function run() {
     // =====================================================
     // HEALTH CHECK
     // =====================================================
-    await client.db("admin").command({ ping: 1 });
+    //await client.db("admin").command({ ping: 1 });
     console.log("🚀 MongoDB Ping Success!");
   } catch (error) {
     console.error("DB Error:", error);
