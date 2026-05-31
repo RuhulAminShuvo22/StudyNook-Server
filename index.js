@@ -1,5 +1,3 @@
-
-
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
@@ -80,7 +78,11 @@ async function run() {
     // =====================================================
     app.get("/rooms", async (req, res) => {
       try {
-        const result = await roomsCollection.find().toArray();
+        const result = await roomsCollection
+          .find()
+          .sort({ createdAt: -1 }) // Latest rooms first
+          .toArray();
+
         res.status(200).json(result);
       } catch (error) {
         res.status(500).json({
@@ -94,50 +96,51 @@ async function run() {
     //middleware
     //===========================================
 
-
     // =====================================================
     // GET SINGLE ROOM
     // =====================================================
-    app.get("/rooms/:id", (req, res, next)=>{
-      const header = req.headers.authorization
-      // console.log(header)
-      if(header === "logged in"){
-        next()
-      }
-      else{
-        res.status(401).json({message: "You are not Logged in"})
-      }
-      
-    } ,  async (req, res) => {
-      try {
-        const id = req.params.id;
+    app.get(
+      "/rooms/:id",
+      (req, res, next) => {
+        const header = req.headers.authorization;
+        // console.log(header)
+        if (header === "logged in") {
+          next();
+        } else {
+          res.status(401).json({ message: "You are not Logged in" });
+        }
+      },
+      async (req, res) => {
+        try {
+          const id = req.params.id;
 
-        if (!ObjectId.isValid(id)) {
-          return res.status(400).json({
+          if (!ObjectId.isValid(id)) {
+            return res.status(400).json({
+              success: false,
+              message: "Invalid ID",
+            });
+          }
+
+          const result = await roomsCollection.findOne({
+            _id: new ObjectId(id),
+          });
+
+          if (!result) {
+            return res.status(404).json({
+              success: false,
+              message: "Room not found",
+            });
+          }
+
+          res.json(result);
+        } catch (error) {
+          res.status(500).json({
             success: false,
-            message: "Invalid ID",
+            message: "Error fetching room",
           });
         }
-
-        const result = await roomsCollection.findOne({
-          _id: new ObjectId(id),
-        });
-
-        if (!result) {
-          return res.status(404).json({
-            success: false,
-            message: "Room not found",
-          });
-        }
-
-        res.json(result);
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          message: "Error fetching room",
-        });
-      }
-    });
+      },
+    );
 
     // =====================================================
     // UPDATE ROOM
